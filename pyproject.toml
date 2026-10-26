@@ -1,0 +1,22 @@
+[project]
+name = "earfit"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Simonghj", email = "2053079382az@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "manifold3d>=3.5.4",
+    "numpy>=2.5.4",
+    "pymeshfix>=0.18.1",
+    "scipy>=1.18.1",
+    "trimesh>=5.2.0",
+]
+
+[project.scripts]
+earfit = "earfit:main"
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"
