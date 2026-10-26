@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>EarFit viewer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161a; color: #e5e7eb; font: 14px system-ui, sans-serif; overflow: hidden; }
+    #panel { position: absolute; top: 16px; left: 16px; background: #1f2329cc; padding: 14px 16px; border-radius: 10px; min-width: 240px; }
+    #panel h1 { font-size: 16px; margin: 0 0 10px; }
+    #panel label { display: block; margin: 8px 0; }
+    #panel input[type=range] { width: 100%; }
+    #info { margin-top: 10px; color: #9ca3af; font-size: 12px; white-space: pre-line; }
+  </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <div id="panel">
+    <h1>EarFit · 3D viewer</h1>
+    <label>Open mold <input id="open" type="range" min="0" max="30" step="0.5" value="18" /></label>
+    <label><input id="showPlug" type="checkbox" checked /> Earplug</label>
+    <label><input id="showMold" type="checkbox" checked /> Mold halves</label>
+    <div id="info">Loading…</div>
+  </div>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+    // Mesh folder written by `earfit --out <dir>`; override with ?dir=../out/fromscan
+    const dir = new URLSearchParams(location.search).get("dir") ?? "../out";
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x14161a);
+    const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 1, 2000);
+    camera.position.set(70, 45, 90);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+    sun.position.set(60, 100, 80);
+    scene.add(sun);
+
+    // Pipeline uses Z-up millimetres; three.js is Y-up.
+    const model = new THREE.Group();
+    model.rotation.x = -Math.PI / 2;
+    scene.add(model);
+
+    const loader = new STLLoader();
+    const load = async (name, color, opacity = 1) => {
+      const geometry = await loader.loadAsync(`${dir}/${name}.stl`);
+      geometry.computeVertexNormals();
+      const material = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, transparent: opacity < 1, opacity });
+      const mesh = new THREE.Mesh(geometry, material);
+      model.add(mesh);
+      return mesh;
+    };
+
+    const info = document.getElementById("info");
+    try {
+      const [plug, moldA, moldB] = await Promise.all([
+        load("plug", 0xf0a050),
+        load("mold_a", 0x8fb3e0, 0.92),
+        load("mold_b", 0xa7c4ea, 0.92),
+      ]);
+      const size = new THREE.Box3().setFromObject(plug).getSize(new THREE.Vector3());
+      info.textContent = `Earplug: ${size.x.toFixed(1)} × ${size.z.toFixed(1)} × ${size.y.toFixed(1)} mm\nDrag to rotate · scroll to zoom`;
+
+      const open = document.getElementById("open");
+      const applyOpen = () => { moldA.position.y = -open.value; moldB.position.y = +open.value; };
+      open.addEventListener("input", applyOpen);
+      applyOpen();
+      document.getElementById("showPlug").addEventListener("change", (e) => (plug.visible = e.target.checked));
+      document.getElementById("showMold").addEventListener("change", (e) => (moldA.visible = moldB.visible = e.target.checked));
+    } catch (err) {
+      info.textContent = `Could not load meshes from ${dir}: ${err.message}\nRun \`uv run earfit\` first.`;
+    }
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+  </script>
+</body>
+</html>
