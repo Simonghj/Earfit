@@ -2,14 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>EarFit viewer</title>
+  <title>EarFit · AI-designed custom earplugs</title>
   <style>
+    * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: #14161a; color: #e5e7eb; font: 14px system-ui, sans-serif; overflow: hidden; }
-    #panel { position: absolute; top: 16px; left: 16px; background: #1f2329cc; padding: 14px 16px; border-radius: 10px; min-width: 240px; }
-    #panel h1 { font-size: 16px; margin: 0 0 10px; }
-    #panel label { display: block; margin: 8px 0; }
+    #app { display: grid; grid-template-columns: 400px 1fr; height: 100%; }
+    #chat { display: flex; flex-direction: column; border-right: 1px solid #2a2f36; background: #181b20; min-height: 0; }
+    #chat header { padding: 14px 16px; border-bottom: 1px solid #2a2f36; }
+    #chat header h1 { margin: 0; font-size: 18px; }
+    #chat header small { color: #9ca3af; }
+    #log { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .msg { padding: 9px 12px; border-radius: 10px; line-height: 1.45; white-space: pre-wrap; max-width: 92%; }
+    .user { align-self: flex-end; background: #2563eb; color: #fff; }
+    .ai { align-self: flex-start; background: #262b33; }
+    .ai.thinking { color: #9ca3af; font-style: italic; }
+    #form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #2a2f36; }
+    #input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #374151; background: #111318; color: inherit; font: inherit; }
+    button { padding: 10px 14px; border-radius: 8px; border: 0; background: #76b900; color: #0b0d10; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #stage { position: relative; min-width: 0; }
+    #stage canvas { display: block; }
+    #panel { position: absolute; top: 16px; left: 16px; background: #1f2329dd; padding: 12px 14px; border-radius: 10px; width: 260px; }
+    #panel label { display: block; margin: 6px 0; }
     #panel input[type=range] { width: 100%; }
-    #info { margin-top: 10px; color: #9ca3af; font-size: 12px; white-space: pre-line; }
+    #design { margin-top: 8px; font-size: 12px; color: #c8ccd4; }
+    #design table { width: 100%; border-collapse: collapse; }
+    #design td { padding: 2px 0; }
+    #design td:last-child { text-align: right; color: #fff; }
+    #downloads a { display: inline-block; margin: 8px 6px 0 0; color: #93c5fd; }
+    #status { position: absolute; bottom: 12px; right: 16px; color: #6b7280; font-size: 12px; }
   </style>
   <script type="importmap">
     { "imports": {
@@ -19,33 +40,48 @@
   </script>
 </head>
 <body>
-  <div id="panel">
-    <h1>EarFit · 3D viewer</h1>
-    <label>Open mold <input id="open" type="range" min="0" max="30" step="0.5" value="18" /></label>
-    <label><input id="showPlug" type="checkbox" checked /> Earplug</label>
-    <label><input id="showMold" type="checkbox" checked /> Mold halves</label>
-    <div id="info">Loading…</div>
+  <div id="app">
+    <section id="chat">
+      <header>
+        <h1>EarFit</h1>
+        <small>Tell the AI what your earplugs are for. It designs them from your ear impression.</small>
+      </header>
+      <div id="log"></div>
+      <form id="form">
+        <input id="input" placeholder="e.g. for sleeping, I sleep on my side" autocomplete="off" />
+        <button id="send">Send</button>
+      </form>
+    </section>
+    <section id="stage">
+      <div id="panel">
+        <strong id="title">Your ear impression</strong>
+        <label>Open mold <input id="open" type="range" min="0" max="30" step="0.5" value="18" /></label>
+        <label><input id="showPlug" type="checkbox" checked /> Earplug</label>
+        <label><input id="showMold" type="checkbox" checked /> Mold halves</label>
+        <div id="design"></div>
+        <div id="downloads"></div>
+      </div>
+      <div id="status"></div>
+    </section>
   </div>
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
     import { STLLoader } from "three/addons/loaders/STLLoader.js";
 
-    // Mesh folder written by `earfit --out <dir>`; override with ?dir=../out/fromscan
-    const dir = new URLSearchParams(location.search).get("dir") ?? "../out";
+    const $ = (id) => document.getElementById(id);
+    const stage = $("stage");
 
+    // ---------- 3D viewer ----------
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(devicePixelRatio);
-    renderer.setSize(innerWidth, innerHeight);
-    document.body.appendChild(renderer.domElement);
-
+    stage.prepend(renderer.domElement);
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x14161a);
-    const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 1, 2000);
+    const camera = new THREE.PerspectiveCamera(40, 1, 1, 2000);
     camera.position.set(70, 45, 90);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-
     scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2));
     const sun = new THREE.DirectionalLight(0xffffff, 2.0);
     sun.position.set(60, 100, 80);
@@ -57,41 +93,119 @@
     scene.add(model);
 
     const loader = new STLLoader();
-    const load = async (name, color, opacity = 1) => {
-      const geometry = await loader.loadAsync(`${dir}/${name}.stl`);
+    const meshes = {};
+    async function loadMesh(name, url, color, opacity = 1) {
+      const geometry = await loader.loadAsync(url);
       geometry.computeVertexNormals();
       const material = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, transparent: opacity < 1, opacity });
-      const mesh = new THREE.Mesh(geometry, material);
-      model.add(mesh);
-      return mesh;
-    };
+      if (meshes[name]) { model.remove(meshes[name]); meshes[name].geometry.dispose(); }
+      meshes[name] = new THREE.Mesh(geometry, material);
+      model.add(meshes[name]);
+    }
+    function applyView() {
+      const open = Number($("open").value);
+      if (meshes.mold_a) { meshes.mold_a.position.y = -open; meshes.mold_a.visible = $("showMold").checked; }
+      if (meshes.mold_b) { meshes.mold_b.position.y = open; meshes.mold_b.visible = $("showMold").checked; }
+      for (const n of ["plug", "impression"]) if (meshes[n]) meshes[n].visible = $("showPlug").checked;
+    }
+    $("open").addEventListener("input", applyView);
+    $("showPlug").addEventListener("change", applyView);
+    $("showMold").addEventListener("change", applyView);
 
-    const info = document.getElementById("info");
-    try {
-      const [plug, moldA, moldB] = await Promise.all([
-        load("plug", 0xf0a050),
-        load("mold_a", 0x8fb3e0, 0.92),
-        load("mold_b", 0xa7c4ea, 0.92),
-      ]);
-      const size = new THREE.Box3().setFromObject(plug).getSize(new THREE.Vector3());
-      info.textContent = `Earplug: ${size.x.toFixed(1)} × ${size.z.toFixed(1)} × ${size.y.toFixed(1)} mm\nDrag to rotate · scroll to zoom`;
+    function resize() {
+      const { clientWidth: w, clientHeight: h } = stage;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
-      const open = document.getElementById("open");
-      const applyOpen = () => { moldA.position.y = -open.value; moldB.position.y = +open.value; };
-      open.addEventListener("input", applyOpen);
-      applyOpen();
-      document.getElementById("showPlug").addEventListener("change", (e) => (plug.visible = e.target.checked));
-      document.getElementById("showMold").addEventListener("change", (e) => (moldA.visible = moldB.visible = e.target.checked));
-    } catch (err) {
-      info.textContent = `Could not load meshes from ${dir}: ${err.message}\nRun \`uv run earfit\` first.`;
+    // ---------- chat ----------
+    let sessionId = null;
+    let version = 0;
+
+    // Escape the model's text, then render only **bold** and leading "- " bullets.
+    function setRich(el, text) {
+      const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      el.innerHTML = esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/^- /gm, "• ");
     }
 
-    addEventListener("resize", () => {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
+    function addMsg(text, cls) {
+      const div = document.createElement("div");
+      div.className = `msg ${cls}`;
+      setRich(div, text);
+      $("log").append(div);
+      $("log").scrollTop = $("log").scrollHeight;
+      return div;
+    }
+
+    function showDesign(d) {
+      $("title").textContent = `Earplug · ${d.use_case}`;
+      const rows = [
+        ["Length", `${d.length_mm} mm`],
+        ["Profile trim", `${d.profile_trim_mm} mm`],
+        ["Vent", d.vent],
+        ["Silicone", d.silicone],
+        ["Volume", `${d.volume_mm3} mm³`],
+        ["Size", d.size_mm.join(" × ") + " mm"],
+      ];
+      $("design").innerHTML = "<table>" + rows.map(([k, v]) => `<tr><td>${k}</td><td></td></tr>`).join("") + "</table>";
+      $("design").querySelectorAll("td:last-child").forEach((td, i) => (td.textContent = rows[i][1]));
+      $("downloads").innerHTML = ["plug", "mold_a", "mold_b"]
+        .map((n) => `<a href="/files/${sessionId}/${n}.stl?v=${version}" download>⬇ ${n}.stl</a>`).join("");
+    }
+
+    async function loadDesign() {
+      version += 1;
+      const base = `/files/${sessionId}`;
+      if (meshes.impression) { model.remove(meshes.impression); delete meshes.impression; }
+      await Promise.all([
+        loadMesh("plug", `${base}/plug.stl?v=${version}`, 0xf0a050),
+        loadMesh("mold_a", `${base}/mold_a.stl?v=${version}`, 0x8fb3e0, 0.92),
+        loadMesh("mold_b", `${base}/mold_b.stl?v=${version}`, 0xa7c4ea, 0.92),
+      ]);
+      applyView();
+    }
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = $("input").value.trim();
+      if (!text || !sessionId) return;
+      $("input").value = "";
+      $("send").disabled = true;
+      addMsg(text, "user");
+      const pending = addMsg("Nemotron is thinking…", "ai thinking");
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, message: text }),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail ?? res.statusText);
+        const data = await res.json();
+        pending.className = "msg ai";
+        setRich(pending, data.reply);
+        if (data.updated && data.design) {
+          await loadDesign();
+          showDesign(data.design);
+        }
+      } catch (err) {
+        pending.className = "msg ai";
+        pending.textContent = `Error: ${err.message}`;
+      } finally {
+        $("send").disabled = false;
+        $("input").focus();
+      }
     });
-    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+
+    const session = await (await fetch("/api/session", { method: "POST" })).json();
+    sessionId = session.session_id;
+    $("status").textContent = `${session.model} · ${session.backend}`;
+    await loadMesh("impression", `/files/${sessionId}/impression.stl`, 0xe0b080);
+    applyView();
+    addMsg("Hi! I'm EarFit. Your ear impression is loaded on the right. What will you use your earplugs for?", "ai");
   </script>
 </body>
 </html>
