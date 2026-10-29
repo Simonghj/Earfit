@@ -18,7 +18,7 @@ if (Get-NetTCPConnection -State Listen -LocalPort 8080 -ErrorAction SilentlyCont
 
 & $server `
     -m $model `
-    --alias "nvidia/Nemotron-3.5-Lightning" `
+    --alias "nvidia/Nemotron-3_5-Lightning" `
     --host 127.0.0.1 --port 8080 `
     -c 32768 --parallel 1 `
     --device CUDA0 --n-gpu-layers 999 --flash-attn on `

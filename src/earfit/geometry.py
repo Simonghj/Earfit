@@ -58,6 +58,53 @@ def clean_scan(mesh: trimesh.Trimesh | trimesh.Scene, longest_mm: float | None =
     return mesh
 
 
+def customize_plug(
+    plug: trimesh.Trimesh,
+    length_mm: float,
+    profile_trim_mm: float = 0.0,
+    vent_diameter_mm: float = 0.0,
+) -> tuple[trimesh.Trimesh, dict]:
+    """Shape an impression into an earplug. The plug's outer face is at min Z, the canal tip at max Z.
+
+    profile_trim_mm: shave this much off the outer face (flush fit, e.g. for side sleepers).
+    length_mm: final plug length from the (trimmed) outer face to the canal tip; shortens the stem.
+    vent_diameter_mm: drill a straight vent from the canal tip to the outer face; 0 = sealed.
+    """
+    z0, z1 = plug.bounds[:, 2]
+    lo = z0 + profile_trim_mm
+    hi = min(lo + length_mm, z1)
+    if hi - lo < 5.0:
+        raise ValueError("plug would be shorter than 5 mm; lower profile_trim_mm or raise length_mm")
+    keep = box(extents=plug.extents + [2, 2, 0])
+    keep.apply_scale([1, 1, (hi - lo) / keep.extents[2]])
+    keep.apply_translation([*(plug.bounds.mean(axis=0)[:2]), (hi + lo) / 2])
+    shaped = _intersection(plug, keep)
+
+    report = {"vent": "none"}
+    if vent_diameter_mm > 0:
+        v = shaped.vertices
+        tip = v[v[:, 2] > hi - 0.01].mean(axis=0)
+        base = v[v[:, 2] < lo + 0.01].mean(axis=0)
+        tip[2], base[2] = hi + 1, lo - 1
+        vent = cylinder(radius=vent_diameter_mm / 2, segment=[base, tip], sections=24)
+        expected = np.pi * (vent_diameter_mm / 2) ** 2 * (hi - lo)
+        vented = _difference(shaped, vent)
+        removed = shaped.volume - vented.volume
+        if removed < 0.9 * expected:
+            raise ValueError("straight vent would break through the plug wall; use a smaller vent or none")
+        shaped = vented
+        report["vent"] = f"{vent_diameter_mm:.1f} mm straight vent"
+    report.update(
+        watertight=bool(shaped.is_watertight),
+        volume_mm3=round(float(shaped.volume)),
+        size_mm=[round(float(x), 1) for x in shaped.extents],
+        length_mm=round(float(hi - lo), 1),
+        max_length_mm=round(float(z1 - lo), 1),
+    )
+    return shaped, report
+
+
+
 def make_mold(
     plug: trimesh.Trimesh,
     wall: float = 6.0,
