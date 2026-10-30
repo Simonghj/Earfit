@@ -2,34 +2,93 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EarFit · AI-designed custom earplugs</title>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; background: #14161a; color: #e5e7eb; font: 14px system-ui, sans-serif; overflow: hidden; }
-    #app { display: grid; grid-template-columns: 400px 1fr; height: 100%; }
-    #chat { display: flex; flex-direction: column; border-right: 1px solid #2a2f36; background: #181b20; min-height: 0; }
-    #chat header { padding: 14px 16px; border-bottom: 1px solid #2a2f36; }
-    #chat header h1 { margin: 0; font-size: 18px; }
-    #chat header small { color: #9ca3af; }
+    :root { --bg: #14161a; --panel: #181b20; --card: #20242b; --line: #2a2f36; --muted: #9ca3af; --green: #76b900; --blue: #2563eb; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: #e5e7eb; font: 14px system-ui, sans-serif; overflow: hidden; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    #app { display: grid; grid-template-columns: 420px 1fr; height: 100%; }
+
+    /* ---- chat column ---- */
+    #chat { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--panel); min-height: 0; }
+    #chat header { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+    #chat header h1 { margin: 0 0 10px; font-size: 18px; }
+    #chat header h1 span { color: var(--green); }
+    .stepper { display: flex; list-style: none; margin: 0; padding: 0; counter-reset: step; }
+    .stepper li { flex: 1; position: relative; text-align: center; font-size: 12px; color: var(--muted); counter-increment: step; }
+    .stepper li::before { content: counter(step); display: block; width: 22px; height: 22px; line-height: 22px; margin: 0 auto 4px; border-radius: 50%; background: #2a2f36; color: #e5e7eb; font-weight: 600; position: relative; z-index: 1; }
+    .stepper li:not(:last-child)::after { content: ""; position: absolute; top: 11px; left: 50%; width: 100%; height: 2px; background: #2a2f36; }
+    .stepper li[data-state=active] { color: #fff; }
+    .stepper li[data-state=active]::before { background: var(--blue); }
+    .stepper li[data-state=done]::before { content: "✓"; background: var(--green); color: #0b0d10; }
+    .stepper li[data-state=done]::after { background: var(--green); }
+
     #log { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
     .msg { padding: 9px 12px; border-radius: 10px; line-height: 1.45; white-space: pre-wrap; max-width: 92%; }
-    .user { align-self: flex-end; background: #2563eb; color: #fff; }
+    .user { align-self: flex-end; background: var(--blue); color: #fff; }
     .ai { align-self: flex-start; background: #262b33; }
-    .ai.thinking { color: #9ca3af; font-style: italic; }
-    #form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #2a2f36; }
+    .thinking { color: var(--muted); }
+    .thinking::after { content: "…"; animation: blink 1s steps(3) infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
+
+    .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .preset { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; transition: transform .15s, border-color .15s; animation: up .35s both; animation-delay: calc(var(--i) * 50ms); }
+    .preset:hover { transform: translateY(-2px); border-color: var(--green); }
+    .preset b { display: block; margin-bottom: 2px; }
+    .preset small { color: var(--muted); }
+    @keyframes up { from { opacity: 0; transform: translateY(6px); } }
+
+    .card { align-self: stretch; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    .card summary { cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--green); color: #0b0d10; }
+    .card.old .badge { background: #374151; color: #d1d5db; }
+    .card table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    .card td { padding: 2px 0; }
+    .card td:last-child { text-align: right; color: #fff; }
+    .card .actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .card .actions a { color: #93c5fd; font-size: 13px; }
+
+    #chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 8px; }
+    .chip { background: transparent; border: 1px solid #374151; border-radius: 99px; padding: 5px 10px; font-size: 12px; animation: up .3s both; animation-delay: calc(var(--i) * 60ms); }
+    .chip:hover { border-color: var(--green); color: #fff; }
+    #form { display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--line); }
     #input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #374151; background: #111318; color: inherit; font: inherit; }
-    button { padding: 10px 14px; border-radius: 8px; border: 0; background: #76b900; color: #0b0d10; font-weight: 600; cursor: pointer; }
-    button:disabled { opacity: 0.5; cursor: default; }
+    .primary { padding: 10px 14px; border-radius: 8px; border: 0; background: var(--green); color: #0b0d10; font-weight: 600; }
+    .primary:disabled { opacity: .5; cursor: default; }
+
+    /* ---- 3D stage ---- */
     #stage { position: relative; min-width: 0; }
     #stage canvas { display: block; }
-    #panel { position: absolute; top: 16px; left: 16px; background: #1f2329dd; padding: 12px 14px; border-radius: 10px; width: 260px; }
-    #panel label { display: block; margin: 6px 0; }
-    #panel input[type=range] { width: 100%; }
-    #design { margin-top: 8px; font-size: 12px; color: #c8ccd4; }
-    #design table { width: 100%; border-collapse: collapse; }
-    #design td { padding: 2px 0; }
-    #design td:last-child { text-align: right; color: #fff; }
-    #downloads a { display: inline-block; margin: 8px 6px 0 0; color: #93c5fd; }
+    #stage.dragging::after { content: "Drop your ear scan (STL / OBJ / PLY)"; position: absolute; inset: 12px; border: 2px dashed var(--green); border-radius: 14px; display: grid; place-items: center; font-size: 18px; background: #14161acc; }
+    .overlay { position: absolute; background: #1f2329e6; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    #controls { top: 16px; left: 16px; width: 280px; }
+    #controls h2, #scan h2 { margin: 0 0 8px; font-size: 14px; }
+    .row { margin: 9px 0; }
+    .row label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+    .row label output { color: #fff; }
+    .row input[type=range] { width: 100%; accent-color: var(--green); }
+    .row select { width: 100%; padding: 5px; background: #111318; color: inherit; border: 1px solid #374151; border-radius: 6px; }
+    .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .swatches { display: flex; gap: 6px; }
+    .swatches input { appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--c); border: 2px solid #111318; cursor: pointer; margin: 0; }
+    .swatches input:checked { outline: 2px solid #fff; }
+    #controls[data-disabled] .edit { opacity: .4; pointer-events: none; }
+    #controls hr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; }
+    #hint { font-size: 12px; color: var(--muted); }
+
+    #scan { bottom: 16px; left: 16px; width: 280px; }
+    #scan .drop { display: block; border: 1px dashed #4b5563; border-radius: 8px; padding: 10px; text-align: center; color: var(--muted); font-size: 12px; cursor: pointer; }
+    #scan .drop:hover { border-color: var(--green); color: #fff; }
+    #scan .line { display: flex; gap: 6px; align-items: center; margin-top: 8px; font-size: 12px; }
+    #scan input[type=number] { width: 70px; padding: 5px; background: #111318; color: inherit; border: 1px solid #374151; border-radius: 6px; }
+    #scanStatus { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 1em; }
+    #scan a { color: #93c5fd; font-size: 12px; }
+
+    #toolbar { top: 16px; right: 16px; display: flex; flex-direction: column; gap: 4px; padding: 6px; }
+    #toolbar button { width: 34px; height: 34px; border-radius: 8px; border: 0; background: transparent; font-size: 16px; }
+    #toolbar button:hover, #toolbar button[aria-pressed=true] { background: #374151; }
     #status { position: absolute; bottom: 12px; right: 16px; color: #6b7280; font-size: 12px; }
   </style>
   <script type="importmap">
@@ -43,27 +102,55 @@
   <div id="app">
     <section id="chat">
       <header>
-        <h1>EarFit</h1>
-        <small>Tell the AI what your earplugs are for. It designs them from your ear impression.</small>
+        <h1>Ear<span>Fit</span> · custom earplug designer</h1>
+        <ol class="stepper">
+          <li id="step-scan">Scan</li>
+          <li id="step-design">Design</li>
+          <li id="step-print">Print &amp; pour</li>
+        </ol>
       </header>
       <div id="log"></div>
+      <div id="chips"></div>
       <form id="form">
-        <input id="input" placeholder="e.g. for sleeping, I sleep on my side" autocomplete="off" />
-        <button id="send">Send</button>
+        <input id="input" placeholder="What are your earplugs for?" autocomplete="off" />
+        <button id="send" class="primary">Send</button>
       </form>
     </section>
+
     <section id="stage">
-      <div id="panel">
-        <strong id="title">Your ear impression</strong>
-        <label>Open mold <input id="open" type="range" min="0" max="30" step="0.5" value="18" /></label>
-        <label><input id="showPlug" type="checkbox" checked /> Earplug</label>
-        <label><input id="showMold" type="checkbox" checked /> Mold halves</label>
-        <div id="design"></div>
-        <div id="downloads"></div>
+      <div id="controls" class="overlay" data-disabled>
+        <h2>Fine-tune</h2>
+        <div id="hint">Pick a use case on the left; then adjust here. The AI sees your changes.</div>
+        <div class="edit">
+          <div class="row"><label>Length <output id="lengthOut"></output></label><input id="length_mm" type="range" min="8" max="30" step="0.5" /></div>
+          <div class="row"><label>Flush trim <output id="trimOut"></output></label><input id="profile_trim_mm" type="range" min="0" max="4" step="0.5" /></div>
+          <div class="row"><label>Vent <output id="ventOut"></output></label><input id="vent_diameter_mm" type="range" min="0" max="2" step="0.1" /></div>
+          <div class="row toggle"><input id="grip_tab" type="checkbox" /><label for="grip_tab" style="margin:0;color:inherit">Pull tab (5 mm)</label></div>
+          <div class="row"><label>Silicone</label><select id="silicone"></select></div>
+          <div class="row"><label>Colour <output id="colorOut"></output></label><div class="swatches" id="swatches"></div></div>
+        </div>
+        <hr />
+        <div class="row"><label>Open mold <output id="openOut"></output></label><input id="open" type="range" min="0" max="30" step="0.5" value="18" /></div>
+        <div class="row toggle"><input id="showPlug" type="checkbox" checked /> Earplug <input id="showMold" type="checkbox" checked style="margin-left:12px" /> Mold</div>
+      </div>
+
+      <div id="scan" class="overlay">
+        <h2>Your ear scan</h2>
+        <label class="drop">Drop or click to upload STL / OBJ / PLY<input id="file" type="file" accept=".stl,.obj,.ply,.glb,.gltf,.off" hidden /></label>
+        <div class="line">Longest side <input id="longest" type="number" min="5" max="60" step="0.5" placeholder="mm" /> mm</div>
+        <div id="scanStatus">Using the sample impression.</div>
+      </div>
+
+      <div id="toolbar" class="overlay">
+        <button id="tReset" title="Reset view (R)">⟲</button>
+        <button id="tSpin" title="Auto-spin (S)" aria-pressed="false">↻</button>
+        <button id="tWire" title="Wireframe (W)" aria-pressed="false">▦</button>
+        <button id="tShot" title="Save screenshot (P)">📷</button>
       </div>
       <div id="status"></div>
     </section>
   </div>
+
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -71,67 +158,101 @@
 
     const $ = (id) => document.getElementById(id);
     const stage = $("stage");
+    const COLOR_HEX = { natural: 0xf0c9a0, blue: 0x3b82f6, red: 0xef4444, green: 0x22c55e, orange: 0xf97316, pink: 0xec4899, black: 0x2b2b2b };
+    const PRESETS = [
+      ["😴", "Side sleeper", "Flush, soft, sealed", "Earplugs for sleeping. I sleep on my side."],
+      ["🛌", "Back sleeper", "Soft, sealed", "Earplugs for sleeping. I sleep on my back."],
+      ["🎸", "Concerts", "Vented, hear friends", "Earplugs for concerts. I still want to hear my friends talk."],
+      ["🏊", "Swimming", "Sealed + pull tab", "Earplugs for swimming to keep water out."],
+      ["🏍️", "Motorcycle", "Flush under helmet", "Earplugs for riding my motorcycle with a full-face helmet."],
+      ["✈️", "Flying", "Vented for pressure", "Earplugs for flying. My ears hurt on landing and I want to hear announcements."],
+      ["🔨", "Work / tools", "Firm, sealed, tab", "Earplugs for construction work with power tools."],
+      ["📚", "Study & focus", "Soft, sealed", "Earplugs to focus while studying in a noisy dorm."],
+    ];
+    const FOLLOW_UPS = ["Make it shorter", "Add a vent so I can hear people", "Add a pull tab", "Make it flush for side sleeping", "Use firmer silicone"];
 
-    // ---------- 3D viewer ----------
+    // ================= 3D viewer =================
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(devicePixelRatio);
     stage.prepend(renderer.domElement);
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x14161a);
     const camera = new THREE.PerspectiveCamera(40, 1, 1, 2000);
-    camera.position.set(70, 45, 90);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.autoRotateSpeed = 2;
+    const resetView = () => { camera.position.set(70, 45, 90); controls.target.set(0, 0, 0); };
+    resetView();
     scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2));
     const sun = new THREE.DirectionalLight(0xffffff, 2.0);
     sun.position.set(60, 100, 80);
     scene.add(sun);
-
-    // Pipeline uses Z-up millimetres; three.js is Y-up.
     const model = new THREE.Group();
-    model.rotation.x = -Math.PI / 2;
+    model.rotation.x = -Math.PI / 2; // pipeline is Z-up millimetres, three.js is Y-up
     scene.add(model);
 
     const loader = new STLLoader();
     const meshes = {};
+    let wireframe = false;
     async function loadMesh(name, url, color, opacity = 1) {
       const geometry = await loader.loadAsync(url);
       geometry.computeVertexNormals();
-      const material = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, transparent: opacity < 1, opacity });
-      if (meshes[name]) { model.remove(meshes[name]); meshes[name].geometry.dispose(); }
+      const material = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, transparent: opacity < 1, opacity, wireframe });
+      removeMesh(name);
       meshes[name] = new THREE.Mesh(geometry, material);
       model.add(meshes[name]);
     }
+    function removeMesh(name) {
+      if (!meshes[name]) return;
+      model.remove(meshes[name]);
+      meshes[name].geometry.dispose();
+      delete meshes[name];
+    }
     function applyView() {
       const open = Number($("open").value);
-      if (meshes.mold_a) { meshes.mold_a.position.y = -open; meshes.mold_a.visible = $("showMold").checked; }
-      if (meshes.mold_b) { meshes.mold_b.position.y = open; meshes.mold_b.visible = $("showMold").checked; }
+      $("openOut").textContent = `${open} mm`;
+      for (const [n, sign] of [["mold_a", -1], ["mold_b", 1]]) {
+        if (meshes[n]) { meshes[n].position.y = sign * open; meshes[n].visible = $("showMold").checked; }
+      }
       for (const n of ["plug", "impression"]) if (meshes[n]) meshes[n].visible = $("showPlug").checked;
     }
-    $("open").addEventListener("input", applyView);
-    $("showPlug").addEventListener("change", applyView);
-    $("showMold").addEventListener("change", applyView);
+    ["open", "showPlug", "showMold"].forEach((id) => $(id).addEventListener("input", applyView));
 
     function resize() {
-      const { clientWidth: w, clientHeight: h } = stage;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
+      renderer.setSize(stage.clientWidth, stage.clientHeight);
+      camera.aspect = stage.clientWidth / stage.clientHeight;
       camera.updateProjectionMatrix();
     }
     addEventListener("resize", resize);
     resize();
     renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
-    // ---------- chat ----------
+    // toolbar + shortcuts
+    const toggleBtn = (btn, on) => btn.setAttribute("aria-pressed", String(on));
+    const actions = {
+      r: resetView,
+      s: () => { controls.autoRotate = !controls.autoRotate; toggleBtn($("tSpin"), controls.autoRotate); },
+      w: () => { wireframe = !wireframe; Object.values(meshes).forEach((m) => (m.material.wireframe = wireframe)); toggleBtn($("tWire"), wireframe); },
+      p: () => { const a = document.createElement("a"); a.href = renderer.domElement.toDataURL("image/png"); a.download = "earfit.png"; a.click(); },
+    };
+    $("tReset").onclick = actions.r; $("tSpin").onclick = actions.s; $("tWire").onclick = actions.w; $("tShot").onclick = actions.p;
+    addEventListener("keydown", (e) => { if (e.target.tagName !== "INPUT" && actions[e.key.toLowerCase()]) actions[e.key.toLowerCase()](); });
+
+    // ================= state + helpers =================
     let sessionId = null;
     let version = 0;
+    let design = null;
+    let busy = false;
 
-    // Escape the model's text, then render only **bold** and leading "- " bullets.
+    function setStep(active) {
+      ["scan", "design", "print"].forEach((s, i) => {
+        $(`step-${s}`).dataset.state = i < active ? "done" : i === active ? "active" : "todo";
+      });
+    }
     function setRich(el, text) {
       const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       el.innerHTML = esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/^- /gm, "• ");
     }
-
     function addMsg(text, cls) {
       const div = document.createElement("div");
       div.className = `msg ${cls}`;
@@ -140,72 +261,190 @@
       $("log").scrollTop = $("log").scrollHeight;
       return div;
     }
+    function addNode(node) { $("log").append(node); $("log").scrollTop = $("log").scrollHeight; }
 
-    function showDesign(d) {
-      $("title").textContent = `Earplug · ${d.use_case}`;
-      const rows = [
-        ["Length", `${d.length_mm} mm`],
-        ["Profile trim", `${d.profile_trim_mm} mm`],
-        ["Vent", d.vent],
-        ["Silicone", d.silicone],
-        ["Volume", `${d.volume_mm3} mm³`],
-        ["Size", d.size_mm.join(" × ") + " mm"],
-      ];
-      $("design").innerHTML = "<table>" + rows.map(([k, v]) => `<tr><td>${k}</td><td></td></tr>`).join("") + "</table>";
-      $("design").querySelectorAll("td:last-child").forEach((td, i) => (td.textContent = rows[i][1]));
-      $("downloads").innerHTML = ["plug", "mold_a", "mold_b"]
-        .map((n) => `<a href="/files/${sessionId}/${n}.stl?v=${version}" download>⬇ ${n}.stl</a>`).join("");
+    function showPresets() {
+      const grid = document.createElement("div");
+      grid.className = "presets";
+      PRESETS.forEach(([icon, title, hint, prompt], i) => {
+        const b = document.createElement("button");
+        b.className = "preset";
+        b.style.setProperty("--i", i);
+        b.innerHTML = `<b>${icon} ${title}</b><small>${hint}</small>`;
+        b.onclick = () => send(prompt);
+        grid.append(b);
+      });
+      addNode(grid);
+    }
+    function showChips(list) {
+      $("chips").replaceChildren(...list.map((text, i) => {
+        const c = document.createElement("button");
+        c.className = "chip";
+        c.style.setProperty("--i", i);
+        c.textContent = text;
+        c.onclick = () => send(text);
+        return c;
+      }));
     }
 
-    async function loadDesign() {
+    function retireCards() {
+      document.querySelectorAll(".card:not(.old)").forEach((c) => {
+        c.classList.add("old");
+        c.open = false;
+        c.querySelector(".badge").textContent = "replaced";
+        c.querySelector(".actions")?.remove();
+      });
+    }
+
+    function addDesignCard(d) {
+      retireCards();
+      const card = document.createElement("details");
+      card.className = "card";
+      card.open = true;
+      card.innerHTML = `<summary>Design v${version} <span class="badge">current</span></summary><table></table><div class="actions"></div>`;
+      const rows = [
+        ["Use", d.use_case], ["Length", `${d.length_mm} mm`], ["Flush trim", `${d.profile_trim_mm} mm`], ["Vent", d.vent],
+        ["Pull tab", d.pull_tab], ["Silicone", d.silicone], ["Colour", d.color], ["Silicone needed", `${(d.volume_mm3 / 1000).toFixed(1)} ml per plug`],
+      ];
+      for (const [k, v] of rows) {
+        const tr = card.querySelector("table").insertRow();
+        tr.insertCell().textContent = k;
+        tr.insertCell().textContent = v;
+      }
+      card.querySelector(".actions").innerHTML = ["plug", "mold_a", "mold_b"]
+        .map((n) => `<a href="/files/${sessionId}/${n}.stl?v=${version}" download>⬇ ${n}.stl</a>`).join("");
+      card.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setStep(3)));
+      addNode(card);
+    }
+
+    // ================= controls (synced with AI) =================
+    const fmt = { length_mm: (v) => `${v} mm`, profile_trim_mm: (v) => `${v} mm`, vent_diameter_mm: (v) => (Number(v) > 0 ? `${v} mm` : "sealed") };
+    const outs = { length_mm: "lengthOut", profile_trim_mm: "trimOut", vent_diameter_mm: "ventOut" };
+    function syncControls(d) {
+      delete $("controls").dataset.disabled;
+      $("hint").textContent = "Drag a slider or ask in chat. Both edit the same design.";
+      $("length_mm").max = Math.max(8, Math.floor(d.max_length_mm * 2) / 2);
+      for (const k of Object.keys(outs)) { $(k).value = d[k]; $(outs[k]).textContent = fmt[k](d[k]); }
+      $("grip_tab").checked = Boolean(d.grip_tab);
+      $("silicone").value = d.silicone;
+      document.querySelector(`#swatches input[value="${d.color}"]`).checked = true;
+      $("colorOut").textContent = d.color;
+    }
+    for (const k of Object.keys(outs)) {
+      $(k).addEventListener("input", () => ($(outs[k]).textContent = fmt[k]($(k).value)));
+      $(k).addEventListener("change", () => adjust({ [k]: Number($(k).value) }));
+    }
+    $("grip_tab").addEventListener("change", () => adjust({ grip_tab: $("grip_tab").checked }));
+    $("silicone").addEventListener("change", () => adjust({ silicone: $("silicone").value }));
+
+    async function api(path, body) {
+      const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail ?? res.statusText);
+      return data;
+    }
+
+    async function showDesign(d) {
+      design = d;
       version += 1;
       const base = `/files/${sessionId}`;
-      if (meshes.impression) { model.remove(meshes.impression); delete meshes.impression; }
+      removeMesh("impression");
       await Promise.all([
-        loadMesh("plug", `${base}/plug.stl?v=${version}`, 0xf0a050),
-        loadMesh("mold_a", `${base}/mold_a.stl?v=${version}`, 0x8fb3e0, 0.92),
-        loadMesh("mold_b", `${base}/mold_b.stl?v=${version}`, 0xa7c4ea, 0.92),
+        loadMesh("plug", `${base}/plug.stl?v=${version}`, COLOR_HEX[d.color] ?? COLOR_HEX.natural),
+        loadMesh("mold_a", `${base}/mold_a.stl?v=${version}`, 0x8fb3e0, 0.9),
+        loadMesh("mold_b", `${base}/mold_b.stl?v=${version}`, 0xa7c4ea, 0.9),
       ]);
       applyView();
+      syncControls(d);
+      addDesignCard(d);
+      setStep(2);
     }
 
-    $("form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = $("input").value.trim();
-      if (!text || !sessionId) return;
-      $("input").value = "";
-      $("send").disabled = true;
-      addMsg(text, "user");
-      const pending = addMsg("Nemotron is thinking…", "ai thinking");
+    async function adjust(changes) {
+      if (!design || busy) { if (design) syncControls(design); return; }
+      busy = true;
       try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId, message: text }),
-        });
-        if (!res.ok) throw new Error((await res.json()).detail ?? res.statusText);
-        const data = await res.json();
+        const { design: d } = await api("/api/adjust", { session_id: sessionId, changes });
+        await showDesign(d);
+      } catch (err) {
+        addMsg(`Couldn't apply that: ${err.message}`, "ai");
+        syncControls(design);
+      } finally {
+        busy = false;
+      }
+    }
+
+    // ================= chat =================
+    async function send(text) {
+      text = text.trim();
+      if (!text || !sessionId || busy) return;
+      busy = true;
+      $("send").disabled = true;
+      $("chips").replaceChildren();
+      addMsg(text, "user");
+      const pending = addMsg("Nemotron is designing", "ai thinking");
+      try {
+        const data = await api("/api/chat", { session_id: sessionId, message: text });
         pending.className = "msg ai";
         setRich(pending, data.reply);
-        if (data.updated && data.design) {
-          await loadDesign();
-          showDesign(data.design);
-        }
+        if (data.updated && data.design) await showDesign(data.design);
+        showChips(design ? FOLLOW_UPS : []);
       } catch (err) {
         pending.className = "msg ai";
         pending.textContent = `Error: ${err.message}`;
       } finally {
+        busy = false;
         $("send").disabled = false;
         $("input").focus();
       }
-    });
+    }
+    $("form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("input").value; $("input").value = ""; send(t); });
 
-    const session = await (await fetch("/api/session", { method: "POST" })).json();
+    // ================= scan upload =================
+    async function uploadScan(file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (!["stl", "obj", "ply", "glb", "gltf", "off"].includes(ext)) { $("scanStatus").textContent = `.${ext} is not supported; use STL, OBJ or PLY.`; return; }
+      const longest = $("longest").value;
+      $("scanStatus").textContent = `Repairing and orienting ${file.name}…`;
+      const q = new URLSearchParams({ session_id: sessionId, filename: file.name });
+      if (longest) q.set("longest_mm", longest);
+      const res = await fetch(`/api/upload?${q}`, { method: "POST", body: file });
+      const data = await res.json();
+      if (!res.ok) { $("scanStatus").textContent = data.detail; return; }
+      ["plug", "mold_a", "mold_b"].forEach(removeMesh);
+      design = null;
+      retireCards();
+      $("chips").replaceChildren();
+      $("controls").dataset.disabled = "";
+      await loadMesh("impression", `/files/${sessionId}/impression.stl?v=${Date.now()}`, 0xe0b080);
+      applyView();
+      $("scanStatus").textContent = `${file.name}: ${data.size_mm.join(" × ")} mm${longest ? "" : " (set longest side for true scale)"}`;
+      setStep(1);
+      addMsg(`Your scan is loaded (${data.size_mm.join(" × ")} mm). What will you use these earplugs for?`, "ai");
+      showPresets();
+    }
+    $("file").addEventListener("change", (e) => e.target.files[0] && uploadScan(e.target.files[0]));
+    stage.addEventListener("dragover", (e) => { e.preventDefault(); stage.classList.add("dragging"); });
+    stage.addEventListener("dragleave", () => stage.classList.remove("dragging"));
+    stage.addEventListener("drop", (e) => { e.preventDefault(); stage.classList.remove("dragging"); e.dataTransfer.files[0] && uploadScan(e.dataTransfer.files[0]); });
+
+    // ================= start =================
+    const session = await api("/api/session", {});
     sessionId = session.session_id;
     $("status").textContent = `${session.model} · ${session.backend}`;
+    $("silicone").innerHTML = session.silicones.map((s) => `<option>${s}</option>`).join("");
+    $("swatches").innerHTML = session.colors
+      .map((c) => `<input type="radio" name="color" value="${c}" title="${c}" style="--c:#${COLOR_HEX[c].toString(16).padStart(6, "0")}" />`).join("");
+    $("swatches").addEventListener("change", (e) => {
+      $("colorOut").textContent = e.target.value;
+      if (meshes.plug) meshes.plug.material.color.setHex(COLOR_HEX[e.target.value]);
+      adjust({ color: e.target.value });
+    });
     await loadMesh("impression", `/files/${sessionId}/impression.stl`, 0xe0b080);
     applyView();
-    addMsg("Hi! I'm EarFit. Your ear impression is loaded on the right. What will you use your earplugs for?", "ai");
+    setStep(1);
+    addMsg("Hi! I'm EarFit. A sample ear impression is loaded on the right (or upload your own scan). What are your earplugs for?", "ai");
+    showPresets();
   </script>
 </body>
 </html>

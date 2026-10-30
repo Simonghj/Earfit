@@ -53,9 +53,40 @@ def clean_scan(mesh: trimesh.Trimesh | trimesh.Scene, longest_mm: float | None =
     if not mesh.is_watertight:
         raise ValueError("scan still has holes after repair; rescan with more overlap")
     if longest_mm is not None:
-        mesh.apply_scale(longest_mm / mesh.extents.max())
+        # Oriented box: the scan arrives at an arbitrary rotation, so axis-aligned extents overstate length.
+        mesh.apply_scale(longest_mm / mesh.bounding_box_oriented.primitive.extents.max())
+    mesh = orient_impression(mesh)
     mesh.apply_translation(-mesh.bounds.mean(axis=0))
     return mesh
+
+
+def _slab_volume(mesh: trimesh.Trimesh, z_from: float, z_to: float) -> float:
+    slab = box(extents=[*(mesh.extents[:2] + 2), z_to - z_from])
+    slab.apply_translation([*mesh.bounds.mean(axis=0)[:2], (z_from + z_to) / 2])
+    return float(_intersection(mesh, slab).volume)
+
+
+def orient_impression(mesh: trimesh.Trimesh, end_fraction: float = 0.3) -> trimesh.Trimesh:
+    """Rotate a scanned impression so the wide concha bowl is at min Z and the narrow canal tip at max Z.
+
+    Tries both directions of each principal axis and keeps the one whose bottom slab holds the most
+    volume relative to its top slab (bowl heavy, canal light).
+    """
+    best, best_score = mesh, -1.0
+    for axis in mesh.principal_inertia_vectors:
+        for direction in (axis, -axis):
+            candidate = mesh.copy()
+            candidate.apply_transform(trimesh.geometry.align_vectors(direction, [0, 0, 1]))
+            z0, z1 = candidate.bounds[:, 2]
+            cut = (z1 - z0) * end_fraction
+            score = _slab_volume(candidate, z0, z0 + cut) / max(_slab_volume(candidate, z1 - cut, z1), 1e-6)
+            if score > best_score:
+                best, best_score = candidate, score
+    return best
+
+
+GRIP_TAB_LENGTH_MM = 5.0
+GRIP_TAB_DIAMETER_MM = 4.5
 
 
 def customize_plug(
@@ -63,12 +94,14 @@ def customize_plug(
     length_mm: float,
     profile_trim_mm: float = 0.0,
     vent_diameter_mm: float = 0.0,
+    grip_tab: bool = False,
 ) -> tuple[trimesh.Trimesh, dict]:
     """Shape an impression into an earplug. The plug's outer face is at min Z, the canal tip at max Z.
 
     profile_trim_mm: shave this much off the outer face (flush fit, e.g. for side sleepers).
     length_mm: final plug length from the (trimmed) outer face to the canal tip; shortens the stem.
     vent_diameter_mm: drill a straight vent from the canal tip to the outer face; 0 = sealed.
+    grip_tab: add a short stem on the outer face to pull the plug out (wet or gloved fingers).
     """
     z0, z1 = plug.bounds[:, 2]
     lo = z0 + profile_trim_mm
@@ -80,12 +113,22 @@ def customize_plug(
     keep.apply_translation([*(plug.bounds.mean(axis=0)[:2]), (hi + lo) / 2])
     shaped = _intersection(plug, keep)
 
+    v = shaped.vertices
+    tip = v[v[:, 2] > hi - 0.01].mean(axis=0)
+    base = v[v[:, 2] < lo + 0.01].mean(axis=0)
+    bottom = lo
+    if grip_tab:
+        bottom = lo - GRIP_TAB_LENGTH_MM
+        tab = cylinder(
+            radius=GRIP_TAB_DIAMETER_MM / 2,
+            segment=[(base[0], base[1], bottom), (base[0], base[1], lo + 1)],
+            sections=32,
+        )
+        shaped = _union([shaped, tab])
+
     report = {"vent": "none"}
     if vent_diameter_mm > 0:
-        v = shaped.vertices
-        tip = v[v[:, 2] > hi - 0.01].mean(axis=0)
-        base = v[v[:, 2] < lo + 0.01].mean(axis=0)
-        tip[2], base[2] = hi + 1, lo - 1
+        tip[2], base[2] = hi + 1, bottom - 1
         vent = cylinder(radius=vent_diameter_mm / 2, segment=[base, tip], sections=24)
         expected = np.pi * (vent_diameter_mm / 2) ** 2 * (hi - lo)
         vented = _difference(shaped, vent)
@@ -94,6 +137,7 @@ def customize_plug(
             raise ValueError("straight vent would break through the plug wall; use a smaller vent or none")
         shaped = vented
         report["vent"] = f"{vent_diameter_mm:.1f} mm straight vent"
+    report["pull_tab"] = f"{GRIP_TAB_LENGTH_MM:.0f} mm pull tab" if grip_tab else "none"
     report.update(
         watertight=bool(shaped.is_watertight),
         volume_mm3=round(float(shaped.volume)),
