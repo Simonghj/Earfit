@@ -21,6 +21,7 @@ MODEL = os.environ.get("EARFIT_MODEL", "nvidia/Nemotron-3_5-Lightning")
 
 COLORS = ["natural", "blue", "red", "green", "orange", "pink", "black"]
 SILICONES = ["Ecoflex 00-30", "Dragon Skin 10"]
+MAX_SAFE_LENGTH_MM = 22  # longest default in the use-case table; deeper risks the eardrum
 DISCLAIMER_EN = "Not a medical device · noise reduction not measured."
 DISCLAIMER_ZH = "非医疗器械 · 降噪效果未经测量。"
 DISCLAIMER_RE = re.compile(r"medical device|医疗", re.I)
@@ -47,7 +48,8 @@ color is cosmetic: "natural" unless the user asks for a colour.
 Rules:
 1. As soon as you know what the earplugs are for, call design_earplug immediately with the defaults above.
    Do not ask preference questions first; the user can refine afterwards.
-2. If the use case is unknown, ask exactly one short question: what will you use them for?
+2. If the message does not say what the earplugs are for (e.g. "make me earplugs", "hi"), do NOT call the tool
+   and do not guess a use case. Ask exactly one short question: what will you use them for?
 3. If the user describes pain, discharge, bleeding, infection, sudden hearing loss or tinnitus, do NOT design.
    Tell them to see a doctor first, briefly and kindly.
 4. When the user asks for a change, call design_earplug again with ALL parameters, changing only what they asked.
@@ -72,7 +74,7 @@ DESIGN_TOOL = {
             "type": "object",
             "properties": {
                 "use_case": {"type": "string", "description": "What the earplugs are for, in a few words."},
-                "length_mm": {"type": "number", "minimum": 8, "maximum": 30},
+                "length_mm": {"type": "number", "minimum": 8, "maximum": MAX_SAFE_LENGTH_MM},
                 "profile_trim_mm": {"type": "number", "minimum": 0, "maximum": 4},
                 "vent_diameter_mm": {"type": "number", "minimum": 0, "maximum": 2},
                 "grip_tab": {"type": "boolean", "description": "5 mm pull tab on the outer face."},
@@ -95,6 +97,15 @@ def make_client() -> OpenAI:
     return OpenAI(api_key="local", base_url=os.environ.get("EARFIT_BASE_URL", LOCAL_URL))
 
 
+# Budget guard: Nemotron 3.5 Lightning on Token Factory costs $0.06 / 1M input and $0.24 / 1M output tokens.
+MAX_OUTPUT_TOKENS = 2048
+PRICE_PER_M_TOKENS = {"prompt_tokens": 0.06, "completion_tokens": 0.24}
+
+
+def usage_cost(usage: dict) -> float:
+    return sum(usage[k] * PRICE_PER_M_TOKENS[k] / 1e6 for k in PRICE_PER_M_TOKENS)
+
+
 class Designer:
     def __init__(self, impression: trimesh.Trimesh, out_dir: Path, client: OpenAI | None = None):
         self.impression = impression
@@ -102,11 +113,17 @@ class Designer:
         self.client = client or make_client()
         self.messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.design: dict | None = None
+        self.usage = {"prompt_tokens": 0, "completion_tokens": 0}
 
     def _design_earplug(self, args: dict) -> dict:
         try:
             if args.get("silicone") not in SILICONES or args.get("color", "natural") not in COLORS:
                 raise ValueError(f"silicone must be one of {SILICONES}; color one of {COLORS}")
+            if float(args["length_mm"]) > MAX_SAFE_LENGTH_MM:
+                raise ValueError(
+                    f"length_mm {args['length_mm']} is over the {MAX_SAFE_LENGTH_MM} mm safety cap (deeper plugs "
+                    "risk reaching the eardrum); use the default length for the use case"
+                )
             plug, report = customize_plug(
                 self.impression,
                 float(args["length_mm"]),
@@ -139,13 +156,31 @@ class Designer:
     def chat(self, user_text: str, max_steps: int = 4) -> str:
         """Run one user turn through the model, executing tool calls until it answers in text."""
         self.messages.append({"role": "user", "content": user_text})
-        designed = False
+        designed = failed = nudged = False
         for _ in range(max_steps):
-            reply = self.client.chat.completions.create(
-                model=MODEL, messages=self.messages, tools=[DESIGN_TOOL], temperature=0.6
-            ).choices[0].message
+            response = self.client.chat.completions.create(
+                model=MODEL, messages=self.messages, tools=[DESIGN_TOOL], temperature=0.6,
+                max_tokens=MAX_OUTPUT_TOKENS,
+                # After a successful design the model only needs to explain it; forbidding further tool calls
+                # stops redesign loops and caps tokens per turn.
+                tool_choice="none" if designed else "auto",
+            )
+            if response.usage:
+                self.usage["prompt_tokens"] += response.usage.prompt_tokens
+                self.usage["completion_tokens"] += response.usage.completion_tokens
+            reply = response.choices[0].message
             if not reply.tool_calls:
                 text = reply.content or ""
+                if failed and not designed and not nudged:
+                    # The model sometimes describes a corrected design without building it; make it build it.
+                    nudged = True
+                    self.messages.append({"role": "assistant", "content": text})
+                    self.messages.append({
+                        "role": "user",
+                        "content": "[The design was NOT created because the tool returned an error. "
+                                   "Call design_earplug now with corrected parameters.]",
+                    })
+                    continue
                 if designed and not DISCLAIMER_RE.search(text):
                     # Safety line is a product requirement, so it must not depend on model sampling.
                     text = f"{text.rstrip()}\n\n{DISCLAIMER_ZH if CJK_RE.search(user_text) else DISCLAIMER_EN}"
@@ -164,5 +199,6 @@ class Designer:
                 except json.JSONDecodeError as err:
                     result = {"ok": False, "error": f"arguments were not valid JSON: {err}"}
                 designed = designed or result["ok"]
+                failed = failed or not result["ok"]
                 self.messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(result)})
         raise RuntimeError(f"model did not finish within {max_steps} steps")

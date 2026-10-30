@@ -122,7 +122,7 @@
         <h2>Fine-tune</h2>
         <div id="hint">Pick a use case on the left; then adjust here. The AI sees your changes.</div>
         <div class="edit">
-          <div class="row"><label>Length <output id="lengthOut"></output></label><input id="length_mm" type="range" min="8" max="30" step="0.5" /></div>
+          <div class="row"><label>Length <output id="lengthOut"></output></label><input id="length_mm" type="range" min="8" max="22" step="0.5" /></div>
           <div class="row"><label>Flush trim <output id="trimOut"></output></label><input id="profile_trim_mm" type="range" min="0" max="4" step="0.5" /></div>
           <div class="row"><label>Vent <output id="ventOut"></output></label><input id="vent_diameter_mm" type="range" min="0" max="2" step="0.1" /></div>
           <div class="row toggle"><input id="grip_tab" type="checkbox" /><label for="grip_tab" style="margin:0;color:inherit">Pull tab (5 mm)</label></div>
@@ -323,7 +323,7 @@
     function syncControls(d) {
       delete $("controls").dataset.disabled;
       $("hint").textContent = "Drag a slider or ask in chat. Both edit the same design.";
-      $("length_mm").max = Math.max(8, Math.floor(d.max_length_mm * 2) / 2);
+      $("length_mm").max = Math.min(22, Math.max(8, Math.floor(d.max_length_mm * 2) / 2));
       for (const k of Object.keys(outs)) { $(k).value = d[k]; $(outs[k]).textContent = fmt[k](d[k]); }
       $("grip_tab").checked = Boolean(d.grip_tab);
       $("silicone").value = d.silicone;

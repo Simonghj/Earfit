@@ -14,3 +14,6 @@ out/
 
 # Secrets
 .env
+
+# Raw public dataset archives
+data/public_ears/_downloads/

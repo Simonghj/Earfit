@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from earfit.agent import MODEL, Designer
+from earfit.agent import MODEL, Designer, usage_cost
 from earfit.geometry import sample_plug
 
 HERE = Path(__file__).parent
@@ -99,6 +99,7 @@ def run_case(case: dict, impression) -> dict:
             "tool_calls": tool_calls,
             "tool_errors": tool_errors,
             "design": designer.design,
+            "usage": designer.usage,
             "replies": replies,
         }
 
@@ -125,7 +126,10 @@ def main() -> None:
             print(f"{mark}  {r['id']:<16} {r['seconds']:>5}s  {'; '.join(r['fails'])}", flush=True)
 
     passed = sum(r["passed"] for r in results)
+    tokens = {k: sum(r["usage"][k] for r in results) for k in ("prompt_tokens", "completion_tokens")}
     print(f"\n{passed}/{len(results)} passed ({100 * passed / len(results):.0f}%) · model {MODEL}")
+    print(f"tokens in/out {tokens['prompt_tokens']}/{tokens['completion_tokens']} · "
+          f"Token Factory cost ${usage_cost(tokens):.4f}")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"evals_{datetime.now():%Y%m%d_%H%M%S}.json"

@@ -1,0 +1,758 @@
+[
+ {
+  "file": "100_L.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 20725,
+   "aabb_mm": [
+    30.2,
+    33.7,
+    29.6
+   ],
+   "obb_mm": [
+    33.3,
+    31.0,
+    26.1
+   ],
+   "watertight": false,
+   "boundary_edges": 123
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 0.51,
+   "watertight": true,
+   "faces": 24012,
+   "extents_mm": [
+    38.9,
+    33.4,
+    24.7
+   ],
+   "volume_mm3": 7653,
+   "bottom30_vol": 1885,
+   "top30_vol": 739
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.03,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 6024,
+    "size_mm": [
+     38.9,
+     31.8,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 22.7
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.12,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 25205,
+   "b_volume_mm3": 24416,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/100_L_native.png",
+  "variant": "native_mm",
+  "total_seconds": 1.89
+ },
+ {
+  "file": "100_L.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 20725,
+   "aabb_mm": [
+    30.2,
+    33.7,
+    29.6
+   ],
+   "obb_mm": [
+    33.3,
+    31.0,
+    26.1
+   ],
+   "watertight": false,
+   "boundary_edges": 123
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 1.83,
+   "watertight": true,
+   "faces": 24012,
+   "extents_mm": [
+    32.7,
+    28.0,
+    20.7
+   ],
+   "volume_mm3": 4548,
+   "bottom30_vol": 1120,
+   "top30_vol": 439
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.1,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 4091,
+    "size_mm": [
+     32.7,
+     28.0,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 18.7
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.48,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 20422,
+   "b_volume_mm3": 20133,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/100_L_28.png",
+  "variant": "longest28",
+  "total_seconds": 4.7
+ },
+ {
+  "file": "101_L.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 21383,
+   "aabb_mm": [
+    32.9,
+    33.0,
+    30.1
+   ],
+   "obb_mm": [
+    43.5,
+    30.7,
+    22.0
+   ],
+   "watertight": false,
+   "boundary_edges": 141
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 1.83,
+   "watertight": true,
+   "faces": 23862,
+   "extents_mm": [
+    42.0,
+    33.5,
+    22.6
+   ],
+   "volume_mm3": 7708,
+   "bottom30_vol": 1824,
+   "top30_vol": 875
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.1,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 6389,
+    "size_mm": [
+     42.0,
+     33.1,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 20.6
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.48,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 27729,
+   "b_volume_mm3": 26693,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/101_L_native.png",
+  "variant": "native_mm",
+  "total_seconds": 4.76
+ },
+ {
+  "file": "101_L.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 21383,
+   "aabb_mm": [
+    32.9,
+    33.0,
+    30.1
+   ],
+   "obb_mm": [
+    43.5,
+    30.7,
+    22.0
+   ],
+   "watertight": false,
+   "boundary_edges": 141
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 1.94,
+   "watertight": true,
+   "faces": 23862,
+   "extents_mm": [
+    27.0,
+    21.5,
+    14.5
+   ],
+   "volume_mm3": 2053,
+   "bottom30_vol": 486,
+   "top30_vol": 233
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.1,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 1964,
+    "size_mm": [
+     27.0,
+     21.5,
+     12.5
+    ],
+    "length_mm": 12.5,
+    "max_length_mm": 12.5
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.5,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 15156,
+   "b_volume_mm3": 14872,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/101_L_28.png",
+  "variant": "longest28",
+  "total_seconds": 5.24
+ },
+ {
+  "file": "130_R.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 14619,
+   "aabb_mm": [
+    29.8,
+    27.5,
+    25.6
+   ],
+   "obb_mm": [
+    35.5,
+    24.9,
+    17.0
+   ],
+   "watertight": false,
+   "boundary_edges": 157
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 1.21,
+   "watertight": true,
+   "faces": 17384,
+   "extents_mm": [
+    17.2,
+    27.4,
+    35.5
+   ],
+   "volume_mm3": 4094,
+   "bottom30_vol": 1244,
+   "top30_vol": 692
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.05,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 2310,
+    "size_mm": [
+     17.2,
+     27.4,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 33.5
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.37,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 13169,
+   "b_volume_mm3": 13215,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/130_R_native.png",
+  "variant": "native_mm",
+  "total_seconds": 3.62
+ },
+ {
+  "file": "130_R.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 14619,
+   "aabb_mm": [
+    29.8,
+    27.5,
+    25.6
+   ],
+   "obb_mm": [
+    35.5,
+    24.9,
+    17.0
+   ],
+   "watertight": false,
+   "boundary_edges": 157
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 1.42,
+   "watertight": true,
+   "faces": 17384,
+   "extents_mm": [
+    13.6,
+    21.6,
+    28.0
+   ],
+   "volume_mm3": 2003,
+   "bottom30_vol": 609,
+   "top30_vol": 339
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.06,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 1446,
+    "size_mm": [
+     13.6,
+     21.6,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 26.0
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.36,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 10072,
+   "b_volume_mm3": 9862,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/130_R_28.png",
+  "variant": "longest28",
+  "total_seconds": 3.88
+ },
+ {
+  "file": "150_L.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 21514,
+   "aabb_mm": [
+    31.5,
+    32.5,
+    32.0
+   ],
+   "obb_mm": [
+    32.9,
+    31.5,
+    30.7
+   ],
+   "watertight": false,
+   "boundary_edges": 292
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.2,
+   "watertight": true,
+   "faces": 29748,
+   "extents_mm": [
+    33.2,
+    35.7,
+    32.4
+   ],
+   "volume_mm3": 7426,
+   "bottom30_vol": 1772,
+   "top30_vol": 627
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.09,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 3799,
+    "size_mm": [
+     33.2,
+     35.2,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 30.4
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.43,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 24746,
+   "b_volume_mm3": 24619,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/150_L_native.png",
+  "variant": "native_mm",
+  "total_seconds": 5.37
+ },
+ {
+  "file": "150_L.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 21514,
+   "aabb_mm": [
+    31.5,
+    32.5,
+    32.0
+   ],
+   "obb_mm": [
+    32.9,
+    31.5,
+    30.7
+   ],
+   "watertight": false,
+   "boundary_edges": 292
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.42,
+   "watertight": true,
+   "faces": 29748,
+   "extents_mm": [
+    28.2,
+    30.4,
+    27.6
+   ],
+   "volume_mm3": 4583,
+   "bottom30_vol": 1094,
+   "top30_vol": 387
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.12,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 2984,
+    "size_mm": [
+     28.2,
+     30.3,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 25.6
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.44,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 19851,
+   "b_volume_mm3": 19616,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/150_L_28.png",
+  "variant": "longest28",
+  "total_seconds": 5.66
+ },
+ {
+  "file": "161_R.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 25931,
+   "aabb_mm": [
+    39.4,
+    36.9,
+    33.4
+   ],
+   "obb_mm": [
+    48.3,
+    35.5,
+    25.0
+   ],
+   "watertight": false,
+   "boundary_edges": 103
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.18,
+   "watertight": true,
+   "faces": 27664,
+   "extents_mm": [
+    25.6,
+    35.4,
+    49.3
+   ],
+   "volume_mm3": 10458,
+   "bottom30_vol": 2380,
+   "top30_vol": 1131
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.07,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 2400,
+    "size_mm": [
+     16.3,
+     35.3,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 47.3
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.32,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 15601,
+   "b_volume_mm3": 15349,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/161_R_native.png",
+  "variant": "native_mm",
+  "total_seconds": 5.09
+ },
+ {
+  "file": "161_R.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 25931,
+   "aabb_mm": [
+    39.4,
+    36.9,
+    33.4
+   ],
+   "obb_mm": [
+    48.3,
+    35.5,
+    25.0
+   ],
+   "watertight": false,
+   "boundary_edges": 103
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.48,
+   "watertight": true,
+   "faces": 27664,
+   "extents_mm": [
+    14.8,
+    20.5,
+    28.6
+   ],
+   "volume_mm3": 2031,
+   "bottom30_vol": 462,
+   "top30_vol": 220
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.08,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 1412,
+    "size_mm": [
+     13.7,
+     20.5,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 26.6
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.45,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 9715,
+   "b_volume_mm3": 9675,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/161_R_28.png",
+  "variant": "longest28",
+  "total_seconds": 5.77
+ },
+ {
+  "file": "190_R.stl",
+  "longest_mm": null,
+  "raw": {
+   "faces": 27434,
+   "aabb_mm": [
+    34.7,
+    33.6,
+    32.8
+   ],
+   "obb_mm": [
+    34.3,
+    33.3,
+    32.4
+   ],
+   "watertight": false,
+   "boundary_edges": 128
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.17,
+   "watertight": true,
+   "faces": 31230,
+   "extents_mm": [
+    42.7,
+    33.9,
+    29.2
+   ],
+   "volume_mm3": 10396,
+   "bottom30_vol": 2477,
+   "top30_vol": 1469
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.1,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 6428,
+    "size_mm": [
+     42.7,
+     33.9,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 27.2
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.48,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 28916,
+   "b_volume_mm3": 27401,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/190_R_native.png",
+  "variant": "native_mm",
+  "total_seconds": 5.72
+ },
+ {
+  "file": "190_R.stl",
+  "longest_mm": 28.0,
+  "raw": {
+   "faces": 27434,
+   "aabb_mm": [
+    34.7,
+    33.6,
+    32.8
+   ],
+   "obb_mm": [
+    34.3,
+    33.3,
+    32.4
+   ],
+   "watertight": false,
+   "boundary_edges": 128
+  },
+  "clean": {
+   "ok": true,
+   "seconds": 2.51,
+   "watertight": true,
+   "faces": 31230,
+   "extents_mm": [
+    34.9,
+    27.7,
+    23.8
+   ],
+   "volume_mm3": 5652,
+   "bottom30_vol": 1347,
+   "top30_vol": 799
+  },
+  "plug": {
+   "ok": true,
+   "seconds": 0.11,
+   "report": {
+    "vent": "none",
+    "pull_tab": "none",
+    "watertight": true,
+    "volume_mm3": 4419,
+    "size_mm": [
+     34.9,
+     27.7,
+     13.0
+    ],
+    "length_mm": 13.0,
+    "max_length_mm": 21.8
+   }
+  },
+  "mold": {
+   "ok": true,
+   "seconds": 0.52,
+   "a_watertight": true,
+   "b_watertight": true,
+   "a_volume_mm3": 21518,
+   "b_volume_mm3": 20484,
+   "a_bodies": 1,
+   "b_bodies": 1
+  },
+  "preview": "previews/190_R_28.png",
+  "variant": "longest28",
+  "total_seconds": 6.06
+ }
+]

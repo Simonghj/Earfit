@@ -105,7 +105,13 @@ def customize_plug(
     """
     z0, z1 = plug.bounds[:, 2]
     lo = z0 + profile_trim_mm
-    hi = min(lo + length_mm, z1)
+    max_length = z1 - lo
+    if length_mm > max_length + 0.01:
+        raise ValueError(
+            f"length_mm {length_mm:g} exceeds this impression's max_length_mm {max_length:.1f}; "
+            "choose a shorter length (the default for the use case)"
+        )
+    hi = lo + length_mm
     if hi - lo < 5.0:
         raise ValueError("plug would be shorter than 5 mm; lower profile_trim_mm or raise length_mm")
     keep = box(extents=plug.extents + [2, 2, 0])
