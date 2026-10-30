@@ -8,12 +8,16 @@ import re
 from pathlib import Path
 
 import trimesh
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from openai import OpenAI
 
 from earfit.geometry import customize_plug, make_mold
 
-load_dotenv()  # NEBIUS_API_KEY / EARFIT_MODEL / EARFIT_BASE_URL from a local .env file
+# NEBIUS_API_KEY / EARFIT_MODEL / EARFIT_BASE_URL from the repo's .env. Real env vars win, but an empty one
+# (some launchers export NEBIUS_API_KEY="") must not hide the key saved in .env.
+for _key, _value in dotenv_values(Path(__file__).resolve().parents[2] / ".env").items():
+    if _value and not os.environ.get(_key):
+        os.environ[_key] = _value
 
 TOKEN_FACTORY_URL = "https://api.tokenfactory.nebius.com/v1/"
 LOCAL_URL = "http://127.0.0.1:8080/v1"
