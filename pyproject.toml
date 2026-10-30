@@ -1,7 +1,7 @@
 [project]
 name = "earfit"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-designed custom earplugs: Nemotron on Nebius Token Factory + parametric mold generator"
 authors = [
     { name = "Simonghj", email = "2053079382az@gmail.com" }
 ]
