@@ -8,9 +8,12 @@ import re
 from pathlib import Path
 
 import trimesh
+from dotenv import load_dotenv
 from openai import OpenAI
 
 from earfit.geometry import customize_plug, make_mold
+
+load_dotenv()  # NEBIUS_API_KEY / EARFIT_MODEL / EARFIT_BASE_URL from a local .env file
 
 TOKEN_FACTORY_URL = "https://api.tokenfactory.nebius.com/v1/"
 LOCAL_URL = "http://127.0.0.1:8080/v1"
