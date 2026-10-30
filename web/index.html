@@ -49,6 +49,10 @@
     .card td:last-child { text-align: right; color: #fff; }
     .card .actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
     .card .actions a { color: #93c5fd; font-size: 13px; }
+    .supplies { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+    .supplies b { margin-top: 4px; }
+    .supplies a { color: #93c5fd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .supplies small { color: var(--muted); margin-top: 4px; }
 
     #chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 8px; }
     .chip { background: transparent; border: 1px solid #374151; border-radius: 99px; padding: 5px 10px; font-size: 12px; animation: up .3s both; animation-delay: calc(var(--i) * 60ms); }
@@ -314,7 +318,45 @@
       card.querySelector(".actions").innerHTML = ["plug", "mold_a", "mold_b"]
         .map((n) => `<a href="/files/${sessionId}/${n}.stl?v=${version}" download>⬇ ${n}.stl</a>`).join("");
       card.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setStep(3)));
+      const buy = document.createElement("button");
+      buy.className = "chip";
+      buy.textContent = "🔎 Where to buy silicone & print the mold";
+      buy.onclick = () => findSupplies(card, buy);
+      card.querySelector(".actions").append(buy);
       addNode(card);
+    }
+
+    // Live web search (Tavily) for the chosen silicone and a 3D-print service.
+    async function findSupplies(card, button) {
+      button.disabled = true;
+      button.textContent = "Searching the web…";
+      const res = await fetch(`/api/supplies?session_id=${sessionId}`);
+      const data = await res.json();
+      const box = document.createElement("div");
+      box.className = "supplies";
+      if (!res.ok) {
+        box.textContent = data.detail;
+      } else {
+        for (const topic of ["silicone", "printing"]) {
+          const h = document.createElement("b");
+          h.textContent = topic === "silicone" ? "Silicone" : "Mold printing";
+          box.append(h);
+          for (const r of data.results.filter((x) => x.topic === topic)) {
+            const a = document.createElement("a");
+            a.href = r.url;
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.textContent = r.title || r.url;
+            box.append(a);
+          }
+        }
+        const src = document.createElement("small");
+        src.textContent = "Live web results via Tavily";
+        box.append(src);
+      }
+      button.remove();
+      card.append(box);
+      $("log").scrollTop = $("log").scrollHeight;
     }
 
     // ================= controls (synced with AI) =================

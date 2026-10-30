@@ -16,6 +16,7 @@ ear impression scan ──► repair + orient ──► Nemotron agent ──des
 - **Chat and sliders edit the same design:** manual changes are passed to the model, so follow-up requests build on them.
 - **Scan upload (STL/OBJ/PLY):** the scan is repaired (MeshFix), oriented and scaled to a measured length.
 - **Downloads:** `plug.stl` plus `mold_a.stl` / `mold_b.stl`, a two-part mold with registration keys, pour sprue and air vent. Print the mold, then pour skin-safe silicone (e.g. Ecoflex 00-30).
+- **Where to buy (Tavily):** each design card has a button that runs a live **Tavily Search API** query for the chosen silicone and for 3D-print services, and lists the links (`src/earfit/sourcing.py`, `GET /api/supplies`).
 - **Safety guardrails (enforced in code, not left to the model):**
   - 22 mm length cap
   - refuses to design for ear pain or discharge and points to a doctor
@@ -28,6 +29,7 @@ ear impression scan ──► repair + orient ──► Nemotron agent ──des
 | `nvidia/Nemotron-3_5-Lightning` on **Nebius Token Factory** | the designer agent: tool calling, multi-turn redesign, multilingual replies |
 | Token Factory OpenAI-compatible API | the same code runs against Nebius or a local llama.cpp server, chosen by one env var |
 | Unsloth GGUF of the same model (local) | free offline development and the eval loop before credits were available |
+| **Tavily Search API** | live web sourcing: where to buy the selected silicone and get the mold printed |
 
 Cost: about **$0.0003 per earplug design**; a full 20-scenario eval run is about $0.008. Measured from the API `usage` fields; see `evals/run_evals.py`.
 
@@ -35,7 +37,7 @@ Cost: about **$0.0003 per earplug design**; a full 20-scenario eval run is about
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
 ```bash
 git clone <this repo> && cd <repo>
-cp .env.example .env            # paste NEBIUS_API_KEY=... (Token Factory)
+cp .env.example .env            # paste NEBIUS_API_KEY=... (Token Factory) and TAVILY_API_KEY=... (optional)
 uv sync
 uv run earfit-web               # http://127.0.0.1:8000  (PORT=8001 to change)
 ```

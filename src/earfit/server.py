@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 
 from earfit.agent import COLORS, MODEL, SILICONES, Designer
 from earfit.geometry import clean_scan, sample_plug
+from earfit.sourcing import find_supplies
 
 ROOT = Path(__file__).resolve().parents[2]
 SESSIONS_DIR = ROOT / "out" / "sessions"
@@ -99,6 +100,18 @@ def adjust(body: AdjustIn) -> dict:
         return {"design": _session(body.session_id).adjust(body.changes)}
     except ValueError as err:
         raise HTTPException(400, str(err)) from err
+
+
+@app.get("/api/supplies")
+def supplies(session_id: str) -> dict:
+    """Live Tavily web search for the current design's silicone and a print service."""
+    designer = _session(session_id)
+    if designer.design is None:
+        raise HTTPException(400, "design an earplug first")
+    try:
+        return {"results": find_supplies(designer.design["silicone"])}
+    except Exception as err:  # missing key / network errors are shown to the user, not a crash
+        raise HTTPException(502, f"web search failed: {err}") from err
 
 
 @app.get("/files/{session_id}/{name}.stl")
