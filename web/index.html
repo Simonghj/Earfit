@@ -105,7 +105,7 @@
 
     /* ---- phones: viewer on top, chat below, panels collapsed into pills ---- */
     @media (max-width: 820px) {
-      #app { grid-template-columns: 1fr; grid-template-rows: 42dvh 1fr; }
+      #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 42dvh 1fr; } /* minmax: long link titles must not widen the column */
       #stage { order: -1; border-bottom: 1px solid var(--line); }
       #chat { border-right: 0; }
       #chat header { padding: 8px 12px 6px; }
@@ -277,7 +277,9 @@
     // On a phone the panels would cover the viewer, so they start closed and open one at a time.
     const phone = matchMedia("(max-width: 820px)");
     const panels = [$("controls"), $("scan")];
-    if (phone.matches) panels.forEach((p) => (p.open = false));
+    const collapse = () => { if (phone.matches) panels.forEach((p) => (p.open = false)); };
+    collapse();
+    phone.addEventListener("change", collapse); // a window narrowed to phone width gets the phone layout's closed panels
     panels.forEach((p) => p.addEventListener("toggle", () => {
       if (p.open && phone.matches) panels.forEach((other) => { if (other !== p) other.open = false; });
     }));
