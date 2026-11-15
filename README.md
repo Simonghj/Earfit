@@ -46,6 +46,41 @@ Without a key the app calls a local OpenAI-compatible server at `http://127.0.0.
 
 Command-line mold generator: `uv run earfit [scan.stl] --longest-mm 27 --out out/`
 
+## Deploy it as a website
+You need a Linux server with Docker, inbound ports 80 and 443 open, and a domain (or subdomain) whose DNS A record
+points at the server. The app must own the root of that hostname, e.g. `earfit.example.com`, not `example.com/earfit`.
+```bash
+curl -fsSL https://get.docker.com | sh          # only if Docker is not installed yet
+git clone https://github.com/Simonghj/Earfit.git && cd Earfit
+cp .env.example .env && nano .env               # NEBIUS_API_KEY, TAVILY_API_KEY, DOMAIN=earfit.example.com
+docker compose up -d --build
+```
+`compose.yaml` runs two containers: the app, and [Caddy](https://caddyserver.com), which obtains and renews the HTTPS
+certificate for `DOMAIN` by itself. The site is live at `https://$DOMAIN` about a minute after the first start.
+
+- Update: `git pull && docker compose up -d --build`
+- Logs: `docker compose logs -f app` (model failures are logged as `model turn failed`)
+- Health: `GET /healthz`
+
+### What keeps a public instance safe to leave running
+| Guard | Default | Change with |
+|---|---|---|
+| Model spend per UTC day, all visitors together; chat answers "come back tomorrow" beyond it | $2 (about 6,000 designs) | `EARFIT_DAILY_BUDGET_USD` |
+| Idle time before a visitor's chat, scan and meshes are deleted | 60 min | `EARFIT_SESSION_TTL_MIN` |
+| Sessions held at once; the longest-idle one is dropped beyond it | 200 | `EARFIT_MAX_SESSIONS` |
+| Scan upload size (counted while streaming) and triangle count | 25 MB, 500,000 | `EARFIT_MAX_SCAN_MB` |
+| Per-IP rate limits: chat 12/min and 200/day, slider edits 60/min, uploads 10 per 10 min, new sessions 60/h | fixed | `LIMITS` in `src/earfit/server.py` |
+| Chat turns per session, message length | 40 turns, 1,000 characters | `MAX_TURNS` in `src/earfit/server.py` |
+| "Where to buy" web search | one Tavily search per silicone every 6 h, shared by all visitors | `SUPPLIES_TTL_S` |
+
+Things to know:
+- **One process only.** Sessions live in memory, so do not add uvicorn workers or a second replica. A restart ends
+  all sessions; open pages notice, start a fresh session and say so.
+- **Rate limits need the visitor's real IP.** Caddy passes it on. If you put Cloudflare's proxy (orange cloud) in
+  front, every visitor appears to come from Cloudflare; use "DNS only" or add `trusted_proxies` to the `Caddyfile`.
+- The page has no third-party dependencies at run time: three.js is served by the app from `web/vendor/`
+  (MIT, licence alongside), so it also works where public CDNs are unreliable.
+
 ## Evaluations
 `uv run python evals/run_evals.py --repeat 2` runs 20 scenarios from `evals/cases.json` and checks the resulting designs:
 - 10 real use cases

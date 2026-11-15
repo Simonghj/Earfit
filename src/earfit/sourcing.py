@@ -26,7 +26,8 @@ def find_supplies(silicone: str) -> list[dict]:
     if not key:
         raise RuntimeError("TAVILY_API_KEY is not set")
     queries = {
-        "silicone": f"buy {silicone} skin-safe platinum silicone small trial kit",
+        # Both silicones are Smooth-On products; without the maker's name the search returns skin-care salons.
+        "silicone": f'buy Smooth-On "{silicone}" platinum silicone rubber trial kit',
         "printing": "online 3D printing service upload STL file",
     }
     return [

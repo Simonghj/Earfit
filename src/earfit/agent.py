@@ -93,12 +93,19 @@ DESIGN_TOOL = {
 }
 
 
+REQUEST_TIMEOUT_S = 90  # the SDK default is 10 minutes with retries, far longer than a visitor waits
+ADJUST_NOTE = "[I adjusted the design manually: "
+
+
 def make_client() -> OpenAI:
     """Nebius Token Factory when NEBIUS_API_KEY is set, otherwise the local llama.cpp server."""
     key = os.environ.get("NEBIUS_API_KEY")
-    if key:
-        return OpenAI(api_key=key, base_url=os.environ.get("EARFIT_BASE_URL", TOKEN_FACTORY_URL))
-    return OpenAI(api_key="local", base_url=os.environ.get("EARFIT_BASE_URL", LOCAL_URL))
+    return OpenAI(
+        api_key=key or "local",
+        base_url=os.environ.get("EARFIT_BASE_URL", TOKEN_FACTORY_URL if key else LOCAL_URL),
+        timeout=REQUEST_TIMEOUT_S,
+        max_retries=1,
+    )
 
 
 # Budget guard: Nemotron 3.5 Lightning on Token Factory costs $0.06 / 1M input and $0.24 / 1M output tokens.
@@ -153,12 +160,23 @@ class Designer:
         result = self._design_earplug(args)
         if not result["ok"]:
             raise ValueError(result["error"])
-        self.messages.append({"role": "user", "content": f"[I adjusted the design manually: {json.dumps(args)}]"})
+        if self.messages[-2]["content"].startswith(ADJUST_NOTE):
+            # Sliders fire often and each note carries the whole design, so only the latest one is kept.
+            del self.messages[-2:]
+        self.messages.append({"role": "user", "content": f"{ADJUST_NOTE}{json.dumps(args)}]"})
         self.messages.append({"role": "assistant", "content": "Noted, I'll build on your manual changes."})
         return self.design
 
     def chat(self, user_text: str, max_steps: int = 4) -> str:
         """Run one user turn through the model, executing tool calls until it answers in text."""
+        start = len(self.messages)
+        try:
+            return self._turn(user_text, max_steps)
+        except Exception:
+            del self.messages[start:]  # a failed turn must not leave a half-finished exchange in the history
+            raise
+
+    def _turn(self, user_text: str, max_steps: int) -> str:
         self.messages.append({"role": "user", "content": user_text})
         designed = failed = nudged = False
         for _ in range(max_steps):

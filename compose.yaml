@@ -1,0 +1,32 @@
+# Production stack: the app plus Caddy, which obtains and renews the HTTPS certificate for DOMAIN.
+#   docker compose up -d --build
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Only Caddy can reach this container, so its X-Forwarded-For is the real visitor address (rate limits use it).
+      FORWARDED_ALLOW_IPS: "*"
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env to the hostname that points at this machine}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
